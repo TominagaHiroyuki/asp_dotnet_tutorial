@@ -4,8 +4,8 @@ using Microsoft.EntityFrameworkCore;
 using ContosoPizza.Services;
 
 var builder = WebApplication.CreateBuilder(args);
-var dbPath = Path.Combine(builder.Environment.ContentRootPath, "Pizzas.db");
-var connectionString = builder.Configuration.GetConnectionString("Pizzas") ?? $"Data Source={dbPath}";
+var connectionString = builder.Configuration.GetConnectionString("Pizzas")
+                    ?? throw new InvalidOperationException("Connection string 'Pizzas' not found.");
 
 // Add services to the container.
 
@@ -13,7 +13,8 @@ builder.Services.AddControllers();
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 //builder.Services.AddDbContext<PizzaDb>(options => options.UseInMemoryDatabase("Items"));
-builder.Services.AddSqlite<PizzaDb>(connectionString);
+//builder.Services.AddSqlite<PizzaDb>(connectionString);
+builder.Services.AddDbContext<PizzaDb>(options => options.UseNpgsql(connectionString));
 builder.Services.AddScoped<PizzaService>();
 
 var app = builder.Build();

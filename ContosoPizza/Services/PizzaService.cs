@@ -1,54 +1,67 @@
 using ContosoPizza.Models;
 using System.Collections.Generic;
+using Microsoft.EntityFrameworkCore;
 
 namespace ContosoPizza.Services;
 
-public static class PizzaService
+public class PizzaService
 {
-    static List<Pizza> Pizzas { get; set; } = new();
-    static int nextId = 3;
-    static PizzaService()
+    private readonly PizzaDb _db;
+
+    public PizzaService(PizzaDb db)
     {
-        Pizzas.Add(new Pizza { Id = 1, Name = "Classic Italian", IsGlutenFree = false });
-        Pizzas.Add(new Pizza { Id = 2, Name = "Veggie", IsGlutenFree = true });
+        _db = db;
     }
 
-    public static List<Pizza> GetAll() => Pizzas;
-    public static Pizza? Get(int id) => Pizzas.FirstOrDefault(p => p.Id == id);
+    public async Task<List<Pizza>> GetAllAsync()
+    {
+        return await _db.Pizzas.ToListAsync();
+    }
+
+    public async Task<Pizza?> GetAsync(int id)
+    {
+        return await _db.Pizzas.FindAsync(id);
+    }
+
+    /// <summary>
+    /// Pizzaが存在するかどうかを確認
+    /// </summary>
+    /// <param name="id"></param>
+    /// <returns></returns>
+    public async Task<bool> AnyAsync(int id)
+    {
+        return await _db.Pizzas.AnyAsync(p => p.Id == id);
+    }
 
     /// <summary>
     /// Pizzaを追加
     /// </summary>
     /// <param name="pizza"></param>
-    public static void Add(Pizza pizza)
+    public async Task AddAsync(Pizza pizza)
     {
-        pizza.Id = nextId++;
-        Pizzas.Add(pizza);
+        _db.Pizzas.Add(pizza);
+        await _db.SaveChangesAsync();
     }
 
     /// <summary>
-    /// Pizzaを削除
+    /// Pizzaを削除する。対象が無ければ false を返す。
     /// </summary>
     /// <param name="id"></param>
-    public static void Delete(int id)
+    public async Task<bool> DeleteAsync(int id)
     {
-        var pizza = Get(id);
+        var pizza = await _db.Pizzas.FindAsync(id);
         if(pizza is null)
         {
-            return;
+            return false;
         }
-
-        Pizzas.Remove(pizza);
+        _db.Pizzas.Remove(pizza);
+        await _db.SaveChangesAsync();
+        return true;
     }
 
-    public static void Update(Pizza pizza)
+    public async Task UpdateAsync(Pizza pizza)
     {
-        var index = Pizzas.FindIndex(p => p.Id == pizza.Id);
-        if(index <= -1)
-        {
-            return;
-        }
-
-        Pizzas[index] = pizza;
+        _db.Pizzas.Update(pizza);
+        await _db.SaveChangesAsync();
     }
 }
